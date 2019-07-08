@@ -46,6 +46,15 @@ public class ControllerConf extends PropertiesConfiguration {
   private static final String CONTROLLER_HOST = "controller.host";
   private static final String CONTROLLER_PORT = "controller.port";
   private static final String DATA_DIR = "controller.data.dir";
+  private static final String USE_HTTP = "controller.http.enabled";
+  private static final String USE_HTTPS = "controller.https.enabled";
+  private static final String CONTROLLER_HTTPS_PORT = "controller.https.port";
+  private static final String KEYSTORE_FILE = "controller.https.keystore.file";
+  private static final String KEYSTORE_PASSWORD = "controller.https.keystore.pass";
+  private static final String TRUSTSTORE_FILE = "controller.https.truststore.file";
+  private static final String TRUSTSTORE_PASSWORD = "controller.https.truststore.pass";
+  private static final String BROKER_LOADBALANCER_ADDRESS = "broker.https.loadbalancer";
+
   // Potentially same as data dir if local
   private static final String LOCAL_TEMP_DIR = "controller.local.temp.dir";
   private static final String ZK_STR = "controller.zk.str";
@@ -54,7 +63,6 @@ public class ControllerConf extends PropertiesConfiguration {
   private static final String HELIX_CLUSTER_NAME = "controller.helix.cluster.name";
   private static final String CLUSTER_TENANT_ISOLATION_ENABLE = "cluster.tenant.isolation.enable";
   private static final String CONSOLE_WEBAPP_ROOT_PATH = "controller.query.console";
-  private static final String CONSOLE_WEBAPP_USE_HTTPS = "controller.query.console.useHttps";
   private static final String EXTERNAL_VIEW_ONLINE_TO_OFFLINE_TIMEOUT = "controller.upload.onlineToOfflineTimeout";
   private static final String CONTROLLER_MODE = "controller.mode";
 
@@ -240,12 +248,64 @@ public class ControllerConf extends PropertiesConfiguration {
     return ControllerConf.class.getClassLoader().getResource("webapp").toExternalForm();
   }
 
-  public void setQueryConsoleUseHttps(boolean useHttps) {
-    setProperty(CONSOLE_WEBAPP_USE_HTTPS, useHttps);
+  public void setUseHttp(boolean useHTTP) {
+    setProperty(USE_HTTP, useHTTP);
   }
 
-  public boolean getQueryConsoleUseHttps() {
-    return containsKey(CONSOLE_WEBAPP_USE_HTTPS) && getBoolean(CONSOLE_WEBAPP_USE_HTTPS);
+  public boolean getUseHttp() {
+    if (!containsKey(USE_HTTP)) {
+      return true;
+    } else {
+      return (boolean) getBoolean(USE_HTTP);
+    }
+  }
+
+  public void setUseHttps(boolean useHttps) {
+    setProperty(USE_HTTPS, useHttps);
+  }
+
+  public boolean getUseHttps() {
+    return containsKey(USE_HTTPS) && getBoolean(USE_HTTPS);
+  }
+
+  public void setKeyStoreFile(String keyStoreFile) {
+    setProperty(KEYSTORE_FILE, keyStoreFile);
+  }
+
+  public String getBrokerLoadbalancerAddress() {
+    if(!containsKey(BROKER_LOADBALANCER_ADDRESS)){
+      return null;
+    } else {
+      return getString(BROKER_LOADBALANCER_ADDRESS);
+    }
+  }
+
+  public String getKeyStoreFile() {
+    return getString(KEYSTORE_FILE, null);
+  }
+
+  public void setKeyStorePassword(String keyStorePassword) {
+    setProperty(KEYSTORE_PASSWORD, keyStorePassword);
+  }
+
+  public String getKeyStorePassword() {
+    return getString(KEYSTORE_PASSWORD, null);
+  }
+
+  public void setTrustStoreFile(String trustStoreFile) {
+    setProperty(TRUSTSTORE_FILE, trustStoreFile);
+  }
+
+  public String getTrustStoreFile() {
+    return getString(TRUSTSTORE_FILE, null);
+  }
+
+  public void setTrustStorePassword(String trustStorePassword) {
+    setProperty(TRUSTSTORE_PASSWORD, trustStorePassword);
+  }
+
+  public String getTrustStorePassword() {
+    return getString(TRUSTSTORE_PASSWORD, null);
   }
 
   public void setJerseyAdminPrimary(String jerseyAdminPrimary) {
@@ -276,8 +336,20 @@ public class ControllerConf extends PropertiesConfiguration {
     setProperty(CONTROLLER_PORT, port);
   }
 
+  public String getControllerHttpsPort() {
+    if (!containsKey(CONTROLLER_HTTPS_PORT)) {
+      return "443";
+    } else {
+      return (String) getProperty(CONTROLLER_HTTPS_PORT);
+    }
+  }
+
   public void setDataDir(String dataDir) {
     setProperty(DATA_DIR, dataDir);
+  }
+
+  public void setControllerHttpsPort(String httpsPort) {
+    setProperty(CONTROLLER_HTTPS_PORT, httpsPort);
   }
 
   public void setRealtimeSegmentCommitTimeoutSeconds(int timeoutSec) {

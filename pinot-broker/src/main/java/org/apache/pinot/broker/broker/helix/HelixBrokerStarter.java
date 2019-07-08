@@ -20,6 +20,7 @@ package org.apache.pinot.broker.broker.helix;
 
 import com.google.common.collect.ImmutableList;
 import com.yammer.metrics.core.MetricsRegistry;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

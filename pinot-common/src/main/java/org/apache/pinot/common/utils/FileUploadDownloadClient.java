@@ -126,6 +126,10 @@ public class FileUploadDownloadClient implements Closeable {
     return new URI(scheme, null, host, port, path, null, null);
   }
 
+  public static URI getRetrieveHTTPSTableConfigURI(String host, int port, String tableName) throws URISyntaxException {
+    return getURI(HTTPS, host, port, TABLES_PATH + "/ "+ tableName);
+  }
+
   public static URI getRetrieveTableConfigHttpURI(String host, int port, String rawTableName)
       throws URISyntaxException {
     return getURI(HTTP, host, port, TABLES_PATH + "/" + rawTableName);
@@ -141,6 +145,10 @@ public class FileUploadDownloadClient implements Closeable {
   public static URI getRetrieveAllSegmentWithTableTypeHttpUri(String host, int port, String rawTableName, String tableType) throws URISyntaxException {
     return new URI(StringUtil.join("/", StringUtils.chomp(HTTP + "://" + host + ":" + port, "/"),
         OLD_SEGMENT_PATH, rawTableName + TYPE_DELIMITER + tableType));
+  }
+
+  public static URI getRetrieveSchemaHttpsURI(String host, int port, String tableName) throws URISyntaxException {
+    return getURI(HTTPS, host, port, SCHEMA_PATH + "/" + tableName);
   }
 
   public static URI getRetrieveSchemaHttpURI(String host, int port, String schemaName)

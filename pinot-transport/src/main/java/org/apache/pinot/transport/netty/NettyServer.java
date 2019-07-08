@@ -42,6 +42,7 @@ import org.apache.pinot.common.metrics.MetricsHelper;
 import org.apache.pinot.common.metrics.MetricsHelper.TimerContext;
 import org.apache.pinot.transport.metrics.AggregatedTransportServerMetrics;
 import org.apache.pinot.transport.metrics.NettyServerMetrics;
+import org.apache.pinot.transport.conf.NettySSLConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,13 +126,15 @@ public abstract class NettyServer implements Runnable {
 
   protected final long _defaultLargeQueryLatencyMs;
 
+  protected final NettySSLConf _nettySSLConf;
+
   public NettyServer(int port, RequestHandlerFactory handlerFactory, AggregatedMetricsRegistry registry,
-      long defaultLargeQueryLatencyMs) {
-    this(port, handlerFactory, registry, defaultLargeQueryLatencyMs, 1, 20);
+      long defaultLargeQueryLatencyMs, NettySSLConf nettySSLConf) {
+    this(port, handlerFactory, registry, defaultLargeQueryLatencyMs, 1, 20, nettySSLConf);
   }
 
   public NettyServer(int port, RequestHandlerFactory handlerFactory, AggregatedMetricsRegistry registry,
-      long defaultLargeQueryLatencyMs, int numThreadsForBossGroup, int numThreadsForWorkerGroup) {
+      long defaultLargeQueryLatencyMs, int numThreadsForBossGroup, int numThreadsForWorkerGroup, NettySSLConf nettySSLConf) {
     _port = port;
     _handlerFactory = handlerFactory;
     _metricsRegistry = registry;
@@ -139,6 +142,7 @@ public abstract class NettyServer implements Runnable {
     _defaultLargeQueryLatencyMs = defaultLargeQueryLatencyMs;
     _bossGroup = new NioEventLoopGroup(numThreadsForBossGroup);
     _workerGroup = new NioEventLoopGroup(numThreadsForWorkerGroup);
+    _nettySSLConf = nettySSLConf;
   }
 
   @Override

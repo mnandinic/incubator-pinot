@@ -69,6 +69,7 @@ public class PinotHadoopJobLauncher {
   public static void main(String[] args)
       throws Exception {
     if (args.length != 2) {
+      System.err.println("PinotHadoopJobLauncher expects 2 arguments, but " + args.length + " arguments were given.");
       usage();
       System.exit(1);
     }
@@ -79,6 +80,7 @@ public class PinotHadoopJobLauncher {
       jobConf = new Properties();
       jobConf.load(new FileInputStream(args[1]));
     } catch (Exception e) {
+      e.printStackTrace();
       usage();
       System.exit(1);
     }

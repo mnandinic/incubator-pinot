@@ -34,6 +34,7 @@ import org.apache.pinot.core.query.executor.QueryExecutor;
 import org.apache.pinot.core.query.scheduler.QueryScheduler;
 import org.apache.pinot.core.query.scheduler.QuerySchedulerFactory;
 import org.apache.pinot.server.conf.ServerConf;
+import org.apache.pinot.transport.conf.NettySSLConf;
 import org.apache.pinot.transport.netty.NettyServer;
 import org.apache.pinot.transport.netty.NettyTCPServer;
 import org.slf4j.Logger;
@@ -116,10 +117,10 @@ public class ServerBuilder {
         .create(_serverConf.getSchedulerConfig(), queryExecutor, _serverMetrics, latestQueryTime);
   }
 
-  public NettyServer buildNettyServer(NettyServer.RequestHandlerFactory requestHandlerFactory)
+  public NettyServer buildNettyServer(NettyServer.RequestHandlerFactory requestHandlerFactory, NettySSLConf nettySSLConf)
       throws ConfigurationException {
     int nettyPort = _serverConf.getNettyConfig().getPort();
     LOGGER.info("Building netty TCP server with port: {}", nettyPort);
-    return new NettyTCPServer(nettyPort, requestHandlerFactory, null);
+    return new NettyTCPServer(nettyPort, requestHandlerFactory, null, nettySSLConf);
   }
 }

@@ -40,6 +40,9 @@ public class PostQueryCommand extends AbstractBaseAdminCommand implements Comman
   @Option(name = "-query", required = true, metaVar = "<string>", usage = "Query string to perform.")
   private String _query;
 
+  @Option(name = "-connectionType", required = false, metaVar = "<string>", usage = "Connection type http/https")
+  private String _connectionType;
+
   @Option(name = "-help", required = false, help = true, aliases = {"-h", "--h", "--help"}, usage = "Print this message.")
   private boolean _help = false;
 
@@ -55,7 +58,7 @@ public class PostQueryCommand extends AbstractBaseAdminCommand implements Comman
 
   @Override
   public String toString() {
-    return ("PostQuery -brokerHost " + _brokerHost + " -brokerPort " + _brokerPort + " -query " + _query);
+    return ("PostQuery -brokerHost " + _brokerHost + " -brokerPort " + _brokerPort + " -query " + _query + "connection type" + _connectionType);
   }
 
   @Override
@@ -70,6 +73,11 @@ public class PostQueryCommand extends AbstractBaseAdminCommand implements Comman
 
   public PostQueryCommand setBrokerHost(String host) {
     _brokerHost = host;
+    return this;
+  }
+
+  public PostQueryCommand setConnectionType(String connectionType) {
+    _connectionType = connectionType;
     return this;
   }
 
@@ -88,10 +96,15 @@ public class PostQueryCommand extends AbstractBaseAdminCommand implements Comman
     if (_brokerHost == null) {
       _brokerHost = NetUtil.getHostAddress();
     }
+
+    if(_connectionType == null){
+      _connectionType = "http";
+    }
+
     LOGGER.info("Executing command: " + toString());
 
     String request = JsonUtils.objectToString(Collections.singletonMap("pql", _query));
-    return sendPostRequest("http://" + _brokerHost + ":" + _brokerPort + "/query", request);
+    return sendPostRequest(_connectionType + _brokerHost + ":" + _brokerPort + "/query", request);
   }
 
   @Override

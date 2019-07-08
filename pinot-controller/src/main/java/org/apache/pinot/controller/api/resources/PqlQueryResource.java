@@ -45,6 +45,7 @@ import org.apache.pinot.common.Utils;
 import org.apache.pinot.common.config.TableNameBuilder;
 import org.apache.pinot.common.exception.QueryException;
 import org.apache.pinot.common.request.BrokerRequest;
+import org.apache.pinot.controller.ControllerConf;
 import org.apache.pinot.common.utils.JsonUtils;
 import org.apache.pinot.controller.api.access.AccessControl;
 import org.apache.pinot.controller.api.access.AccessControlFactory;
@@ -108,36 +109,37 @@ public class PqlQueryResource {
     }
     String tableName = TableNameBuilder.extractRawTableName(brokerRequest.getQuerySource().getTableName());
 
-    // Validate data access
-    AccessControl accessControl = _accessControlFactory.create();
-    if (!accessControl.hasDataAccess(httpHeaders, tableName)) {
-      return QueryException.ACCESS_DENIED_ERROR.toString();
-    }
+    String brokerLBurl = _pinotHelixResourceManager.getBrokerLoadBalancerAddress();
+    if (brokerLBurl != null) {
+      LOGGER.info("using load balancer address: {}", brokerLBurl);
+      String url = "https://" + brokerLBurl + "/query";
+      return sendPQLRaw(url, pqlQuery, traceEnabled);
+    } else {
+      // Validate data access
+      AccessControl accessControl = _accessControlFactory.create();
+      if (!accessControl.hasDataAccess(httpHeaders, tableName)) {
+        return QueryException.ACCESS_DENIED_ERROR.toString();
+      }
 
-    // Get brokers for the resource table.
-    List<String> instanceIds = _pinotHelixResourceManager.getBrokerInstancesFor(tableName);
-    if (instanceIds.isEmpty()) {
-      return QueryException.BROKER_RESOURCE_MISSING_ERROR.toString();
-    }
+      // Get brokers for the resource table.
+      List<String> instanceIds = _pinotHelixResourceManager.getBrokerInstancesFor(tableName);
+      if (instanceIds.isEmpty()) {
+        return QueryException.BROKER_RESOURCE_MISSING_ERROR.toString();
+      }
 
-    // Retain only online brokers.
-    instanceIds.retainAll(_pinotHelixResourceManager.getOnlineInstanceList());
-    if (instanceIds.isEmpty()) {
-      return QueryException.BROKER_INSTANCE_MISSING_ERROR.toString();
+      // Retain only online brokers.
+      instanceIds.retainAll(_pinotHelixResourceManager.getOnlineInstanceList());
+      if (instanceIds.isEmpty()) {
+        return QueryException.BROKER_INSTANCE_MISSING_ERROR.toString();
+      }
+      // Send query to a random broker.
+      String instanceId = instanceIds.get(RANDOM.nextInt(instanceIds.size()));
+      InstanceConfig instanceConfig = _pinotHelixResourceManager.getHelixInstanceConfig(instanceId);
+      String hostNameWithPrefix = instanceConfig.getHostName();
+      String url = "http://" + hostNameWithPrefix.substring(hostNameWithPrefix.indexOf("_") + 1) + ":"
+          + instanceConfig.getPort() + "/query";
+      return sendPQLRaw(url, pqlQuery, traceEnabled);
     }
-
-    // Send query to a random broker.
-    String instanceId = instanceIds.get(RANDOM.nextInt(instanceIds.size()));
-    InstanceConfig instanceConfig = _pinotHelixResourceManager.getHelixInstanceConfig(instanceId);
-    if (instanceConfig == null) {
-      LOGGER.error("Instance {} not found", instanceId);
-      return QueryException.INTERNAL_ERROR.toString();
-    }
-    String hostNameWithPrefix = instanceConfig.getHostName();
-    String url =
-        "http://" + hostNameWithPrefix.substring(hostNameWithPrefix.indexOf("_") + 1) + ":" + instanceConfig.getPort()
-            + "/query";
-    return sendPQLRaw(url, pqlQuery, traceEnabled);
   }
 
   public String sendPostRaw(String urlStr, String requestStr, Map<String, String> headers) {

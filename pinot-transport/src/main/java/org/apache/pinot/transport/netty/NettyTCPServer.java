@@ -30,7 +30,7 @@ import org.apache.pinot.common.Utils;
 import org.apache.pinot.common.metrics.AggregatedMetricsRegistry;
 import org.apache.pinot.transport.metrics.AggregatedTransportServerMetrics;
 import org.apache.pinot.transport.metrics.NettyServerMetrics;
-
+import org.apache.pinot.transport.conf.NettySSLConf;
 
 /**
  *
@@ -41,17 +41,21 @@ import org.apache.pinot.transport.metrics.NettyServerMetrics;
 public class NettyTCPServer extends NettyServer {
 
   public NettyTCPServer(int port, RequestHandlerFactory handlerFactory, AggregatedMetricsRegistry registry,
-      long defaultLargeQueryLatencyMs) {
-    super(port, handlerFactory, registry, defaultLargeQueryLatencyMs);
+      long defaultLargeQueryLatencyMs, NettySSLConf nettySSLConf) {
+    super(port, handlerFactory, registry, defaultLargeQueryLatencyMs, nettySSLConf);
   }
 
   public NettyTCPServer(int port, RequestHandlerFactory handlerFactory, AggregatedMetricsRegistry registry) {
-    this(port, handlerFactory, registry, 100);
+    this(port, handlerFactory, registry, 100, null);
+  }
+
+  public NettyTCPServer(int port, RequestHandlerFactory handlerFactory, AggregatedMetricsRegistry registry, NettySSLConf nettySSLConf) {
+    this(port, handlerFactory, registry, 100, nettySSLConf);
   }
 
   public NettyTCPServer(int port, RequestHandlerFactory handlerFactory, AggregatedMetricsRegistry registry,
       long defaultLargeQueryLatencyMs, int numThreadsForBossGroup, int numThreadsForWorkerGroup) {
-    super(port, handlerFactory, registry, defaultLargeQueryLatencyMs, numThreadsForBossGroup, numThreadsForWorkerGroup);
+    super(port, handlerFactory, registry, defaultLargeQueryLatencyMs, numThreadsForBossGroup, numThreadsForWorkerGroup, null);
   }
 
   @Override
@@ -63,7 +67,7 @@ public class NettyTCPServer extends NettyServer {
   }
 
   protected ChannelInitializer<SocketChannel> createChannelInitializer() {
-    return new ServerChannelInitializer(_handlerFactory, _metricsRegistry, _metrics, _defaultLargeQueryLatencyMs);
+    return new ServerChannelInitializer(_handlerFactory, _metricsRegistry, _metrics, _defaultLargeQueryLatencyMs, _nettySSLConf);
   }
 
   /**
@@ -81,24 +85,29 @@ public class NettyTCPServer extends NettyServer {
     private final MetricsRegistry _registry;
     private final AggregatedTransportServerMetrics _globalMetrics;
     private final long _defaultLargeQueryLatencyMs;
+    private final NettySSLConf _nettySSLconf;
 
     public ServerChannelInitializer(RequestHandlerFactory handlerFactory, MetricsRegistry registry,
-        AggregatedTransportServerMetrics globalMetrics, long defaultLargeQueryLatencyMs) {
+        AggregatedTransportServerMetrics globalMetrics, long defaultLargeQueryLatencyMs, NettySSLConf nettySSLConf) {
       _handlerFactory = handlerFactory;
       _registry = registry;
       _globalMetrics = globalMetrics;
       _defaultLargeQueryLatencyMs = defaultLargeQueryLatencyMs;
+      _nettySSLconf = nettySSLConf;
     }
 
     public ServerChannelInitializer(RequestHandlerFactory handlerFactory, MetricsRegistry registry,
         AggregatedTransportServerMetrics globalMetrics) {
-      this(handlerFactory, registry, globalMetrics, 100);
+      this(handlerFactory, registry, globalMetrics, 100, null);
     }
 
     @Override
     protected void initChannel(SocketChannel ch)
         throws Exception {
       LOGGER.info("Setting up Server channel, scheduler");
+      if (_nettySSLconf != null) {
+        ch.pipeline().addLast("ssl", _nettySSLconf.generateSSLHandler());
+      }
       ch.pipeline().addLast("decoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
       ch.pipeline().addLast("encoder", new LengthFieldPrepender(4));
       //ch.pipeline().addLast("logger", new LoggingHandler());

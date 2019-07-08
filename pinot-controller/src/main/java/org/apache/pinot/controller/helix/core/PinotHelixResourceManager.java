@@ -133,6 +133,7 @@ public class PinotHelixResourceManager {
   private final boolean _isSingleTenantCluster;
   private final boolean _enableBatchMessageMode;
   private final boolean _allowHLCTables;
+  private final String _overloadBrokerWithLB;
 
   private HelixManager _helixZkManager;
   private HelixAdmin _helixAdmin;
@@ -147,7 +148,7 @@ public class PinotHelixResourceManager {
 
   public PinotHelixResourceManager(@Nonnull String zkURL, @Nonnull String helixClusterName,
       @Nonnull String controllerInstanceId, String dataDir, long externalViewOnlineToOfflineTimeoutMillis,
-      boolean isSingleTenantCluster, boolean enableBatchMessageMode, boolean allowHLCTables) {
+      boolean isSingleTenantCluster, boolean enableBatchMessageMode, boolean allowHLCTables, String overloadBrokerWithLB) {
     _helixZkURL = HelixConfig.getAbsoluteZkPathForHelix(zkURL);
     _helixClusterName = helixClusterName;
     _instanceId = controllerInstanceId;
@@ -156,6 +157,8 @@ public class PinotHelixResourceManager {
     _isSingleTenantCluster = isSingleTenantCluster;
     _enableBatchMessageMode = enableBatchMessageMode;
     _allowHLCTables = allowHLCTables;
+    _overloadBrokerWithLB = overloadBrokerWithLB;
+
   }
 
   public PinotHelixResourceManager(@Nonnull ControllerConf controllerConf) {
@@ -163,7 +166,7 @@ public class PinotHelixResourceManager {
         CommonConstants.Helix.PREFIX_OF_CONTROLLER_INSTANCE + controllerConf.getControllerHost() + "_"
             + controllerConf.getControllerPort(), controllerConf.getDataDir(),
         controllerConf.getExternalViewOnlineToOfflineTimeout(), controllerConf.tenantIsolationEnabled(),
-        controllerConf.getEnableBatchMessageMode(), controllerConf.getHLCTablesAllowed());
+        controllerConf.getEnableBatchMessageMode(), controllerConf.getHLCTablesAllowed(), controllerConf.getBrokerLoadbalancerAddress());
   }
 
   /**
@@ -345,6 +348,16 @@ public class PinotHelixResourceManager {
   @Nullable
   public InstanceZKMetadata getInstanceZKMetadata(@Nonnull String instanceId) {
     return ZKMetadataProvider.getInstanceZKMetadata(_propertyStore, instanceId);
+  }
+
+  /**
+   * Get the Broker Load Balancer address if it exists
+   * @param
+   * @return String of load balancer address, null if none defined
+   */
+  @Nullable
+  public String getBrokerLoadBalancerAddress() {
+    return _overloadBrokerWithLB;
   }
 
   /**

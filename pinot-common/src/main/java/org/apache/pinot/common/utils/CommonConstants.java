@@ -156,7 +156,7 @@ public class CommonConstants {
     public static final String CONFIG_OF_BROKER_MIN_RESOURCE_PERCENT_FOR_START =
         "pinot.broker.startup.minResourcePercent";
     public static final double DEFAULT_BROKER_MIN_RESOURCE_PERCENT_FOR_START = 100.0;
-
+    public static final String BROKER_SSL_ENABLED = "pinot.broker.ssl.enabled";
     public static class Request {
       public static final String PQL = "pql";
       public static final String TRACE = "trace";
@@ -180,6 +180,7 @@ public class CommonConstants {
     public static final String CONFIG_OF_QUERY_EXECUTOR_CLASS = "pinot.server.query.executor.class";
     public static final String CONFIG_OF_REQUEST_HANDLER_FACTORY_CLASS = "pinot.server.requestHandlerFactory.class";
     public static final String CONFIG_OF_NETTY_PORT = "pinot.server.netty.port";
+    public static final String CONFIG_OF_SSL_ENABLE = "pinot.server.netty.ssl.enabled";
     public static final String CONFIG_OF_ADMIN_API_PORT = "pinot.server.adminapi.port";
 
     public static final String CONFIG_OF_SEGMENT_FORMAT_VERSION = "pinot.server.instance.segment.format.version";
@@ -272,6 +273,7 @@ public class CommonConstants {
 
       public static final int DEFAULT_SEGMENT_UPLOAD_REQUEST_TIMEOUT_MS = 300_000;
       public static final int DEFAULT_OTHER_REQUESTS_TIMEOUT = 10_000;
+      public static final String CONFIG_OF_SSL_ENABLE = "pinot.server.netty.ssl.enabled";
     }
   }
 

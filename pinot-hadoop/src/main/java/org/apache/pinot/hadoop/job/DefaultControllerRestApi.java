@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.File;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.pinot.common.config.TableConfig;
@@ -56,9 +57,18 @@ public class DefaultControllerRestApi implements ControllerRestApi {
   public TableConfig getTableConfig() {
     for (PushLocation pushLocation : _pushLocations) {
       try {
-        SimpleHttpResponse response = _fileUploadDownloadClient.sendGetRequest(FileUploadDownloadClient
-            .getRetrieveTableConfigHttpURI(pushLocation.getHost(), pushLocation.getPort(), _rawTableName));
-        JsonNode offlineJsonTableConfig = JsonUtils.stringToJsonNode(response.getResponse()).get(OFFLINE);
+        SimpleHttpResponse response = null;
+        JsonNode offlineJsonTableConfig = null;
+
+        if(pushLocation.getHost().toLowerCase().contains("https")){
+          response = _fileUploadDownloadClient.sendGetRequest(FileUploadDownloadClient
+              .getRetrieveHTTPSTableConfigURI(pushLocation.getHost(), pushLocation.getPort(), _rawTableName));
+          offlineJsonTableConfig = JsonUtils.stringToJsonNode(response.getResponse()).get(OFFLINE);
+        }else{
+          response = _fileUploadDownloadClient.sendGetRequest(FileUploadDownloadClient
+              .getRetrieveTableConfigHttpURI(pushLocation.getHost(), pushLocation.getPort(), _rawTableName));
+          offlineJsonTableConfig = JsonUtils.stringToJsonNode(response.getResponse()).get(OFFLINE);
+        }
         if (offlineJsonTableConfig != null) {
           TableConfig offlineTableConfig = TableConfig.fromJsonConfig(offlineJsonTableConfig);
           LOGGER.info("Got table config: {}", offlineTableConfig);
@@ -79,11 +89,19 @@ public class DefaultControllerRestApi implements ControllerRestApi {
   public Schema getSchema() {
     for (PushLocation pushLocation : _pushLocations) {
       try {
-        SimpleHttpResponse response = _fileUploadDownloadClient.sendGetRequest(FileUploadDownloadClient
-            .getRetrieveSchemaHttpURI(pushLocation.getHost(), pushLocation.getPort(), _rawTableName));
-        Schema schema = Schema.fromString(response.getResponse());
-        LOGGER.info("Got schema: {}", schema);
-        return schema;
+        if(pushLocation.getHost().toLowerCase().contains("https")){
+          SimpleHttpResponse response = _fileUploadDownloadClient.sendGetRequest(FileUploadDownloadClient
+              .getRetrieveSchemaHttpsURI(pushLocation.getHost(), pushLocation.getPort(), _rawTableName));
+          Schema schema = Schema.fromString(response.getResponse());
+          LOGGER.info("Got schema: {}", schema);
+          return schema;
+        }else{
+          SimpleHttpResponse response = _fileUploadDownloadClient.sendGetRequest(FileUploadDownloadClient
+              .getRetrieveSchemaHttpURI(pushLocation.getHost(), pushLocation.getPort(), _rawTableName));
+          Schema schema = Schema.fromString(response.getResponse());
+          LOGGER.info("Got schema: {}", schema);
+          return schema;
+        }
       } catch (Exception e) {
         LOGGER.warn("Caught exception while fetching schema for table: {} from push location: {}", _rawTableName,
             pushLocation, e);
@@ -105,10 +123,17 @@ public class DefaultControllerRestApi implements ControllerRestApi {
       for (PushLocation pushLocation : _pushLocations) {
         LOGGER.info("Pushing segment: {} to location: {}", segmentName, pushLocation);
         try (InputStream inputStream = fileSystem.open(tarFilePath)) {
-          SimpleHttpResponse response = _fileUploadDownloadClient.uploadSegment(
-              FileUploadDownloadClient.getUploadSegmentHttpURI(pushLocation.getHost(), pushLocation.getPort()),
-              segmentName, inputStream);
-          LOGGER.info("Response {}: {}", response.getStatusCode(), response.getResponse());
+          if(pushLocation.getHost().toLowerCase().contains("https")){
+            SimpleHttpResponse response = _fileUploadDownloadClient.uploadSegment(
+                FileUploadDownloadClient.getUploadSchemaHttpsURI(pushLocation.getHost(), pushLocation.getPort()),
+                segmentName, inputStream);
+            LOGGER.info("Response {}: {}", response.getStatusCode(), response.getResponse());
+          }else{
+            SimpleHttpResponse response = _fileUploadDownloadClient.uploadSegment(
+                FileUploadDownloadClient.getUploadSegmentHttpURI(pushLocation.getHost(), pushLocation.getPort()),
+                segmentName, inputStream);
+            LOGGER.info("Response {}: {}", response.getStatusCode(), response.getResponse());
+          }
         } catch (Exception e) {
           LOGGER.error("Caught exception while pushing segment: {} to location: {}", segmentName, pushLocation, e);
           throw new RuntimeException(e);
@@ -124,10 +149,17 @@ public class DefaultControllerRestApi implements ControllerRestApi {
       for (PushLocation pushLocation : _pushLocations) {
         LOGGER.info("Sending segment URI: {} to location: {}", segmentUri, pushLocation);
         try {
-          SimpleHttpResponse response = _fileUploadDownloadClient.sendSegmentUri(
-              FileUploadDownloadClient.getUploadSegmentHttpURI(pushLocation.getHost(), pushLocation.getPort()),
-              segmentUri);
-          LOGGER.info("Response {}: {}", response.getStatusCode(), response.getResponse());
+          if(pushLocation.getHost().toLowerCase().contains("https")){
+            SimpleHttpResponse response = _fileUploadDownloadClient.sendSegmentUri(
+                FileUploadDownloadClient.getUploadSegmentHttpsURI(pushLocation.getHost(), pushLocation.getPort()),
+                segmentUri);
+            LOGGER.info("Response {}: {}", response.getStatusCode(), response.getResponse());
+          }else{
+            SimpleHttpResponse response = _fileUploadDownloadClient.sendSegmentUri(
+                FileUploadDownloadClient.getUploadSegmentHttpURI(pushLocation.getHost(), pushLocation.getPort()),
+                segmentUri);
+            LOGGER.info("Response {}: {}", response.getStatusCode(), response.getResponse());
+          }
         } catch (Exception e) {
           LOGGER.error("Caught exception while sending segment URI: {} to location: {}", segmentUri, pushLocation, e);
           throw new RuntimeException(e);

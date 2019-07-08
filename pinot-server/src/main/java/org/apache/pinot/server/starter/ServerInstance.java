@@ -34,6 +34,7 @@ import org.apache.pinot.transport.netty.NettyServer;
 import org.apache.pinot.transport.netty.NettyServer.RequestHandlerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.pinot.transport.conf.NettySSLConf;
 
 
 /**
@@ -54,7 +55,7 @@ public class ServerInstance {
 
   private boolean _started = false;
 
-  public void init(@Nonnull ServerConf serverConf, @Nonnull ZkHelixPropertyStore<ZNRecord> propertyStore)
+  public void init(@Nonnull ServerConf serverConf, @Nonnull ZkHelixPropertyStore<ZNRecord> propertyStore, NettySSLConf nettySSLConf)
       throws Exception {
     LOGGER.info("Initializing server instance");
 
@@ -71,7 +72,7 @@ public class ServerInstance {
       public NettyServer.RequestHandler createNewRequestHandler() {
         return _requestHandler;
       }
-    });
+    }, nettySSLConf);
 
     LOGGER.info("Finish initializing server instance");
   }

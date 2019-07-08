@@ -34,10 +34,16 @@ import org.apache.pinot.common.utils.CommonConstants.Broker;
 import org.apache.pinot.common.utils.CommonConstants.Helix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.io.IOException;
 
 
 public class BrokerServerBuilder {
   private static final Logger LOGGER = LoggerFactory.getLogger(BrokerServerBuilder.class);
+  private static final String USE_SSL = "pinot.broker.ssl.enabled";
+  private static final String KEYSTORE_FILE = "pinot.broker.ssl.keystore.file";
+  private static final String KEYSTORE_PASSWORD = "pinot.broker.ssl.keystore.pass";
+  private static final String TRUSTSTORE_FILE = "pinot.broker.ssl.truststore.file";
+  private static final String TRUSTSTORE_PASSWORD = "pinot.broker.ssl.truststore.pass";
 
   public enum State {
     INIT, STARTING, RUNNING, SHUTTING_DOWN, SHUTDOWN
@@ -90,13 +96,25 @@ public class BrokerServerBuilder {
     }
   }
 
-  public void start() {
+  public void start() throws IOException{
     LOGGER.info("Starting Pinot Broker");
 
     Preconditions.checkState(_state.get() == State.INIT);
     _state.set(State.STARTING);
 
     _brokerRequestHandler.start();
+    if (_config.containsKey(USE_SSL) && _config.getBoolean(USE_SSL))
+    {
+      if(!(_config.containsKey(KEYSTORE_FILE) && _config.containsKey(KEYSTORE_PASSWORD)
+          && _config.containsKey(TRUSTSTORE_FILE) && _config.containsKey(TRUSTSTORE_PASSWORD)) ){
+        throw new IOException("Have not specified all required SSL configs: key/truststore file paths and passwords");
+      }
+      else {
+        _brokerAdminApplication.setSSLConfigs(_config.getString(KEYSTORE_FILE), _config.getString(KEYSTORE_PASSWORD),
+            _config.getString(TRUSTSTORE_FILE), _config.getString(TRUSTSTORE_PASSWORD));
+      }
+    }
+
     int brokerQueryPort = _config.getInt(Helix.KEY_OF_BROKER_QUERY_PORT, Helix.DEFAULT_BROKER_QUERY_PORT);
     _brokerAdminApplication.start(brokerQueryPort);
 

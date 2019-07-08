@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.pinot.transport.conf.NettySSLConf;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationUtils;
@@ -165,7 +166,12 @@ public class HelixServerStarter {
     ServerSegmentCompletionProtocolHandler
         .init(_serverConf.subset(SegmentCompletionProtocol.PREFIX_OF_CONFIG_OF_SEGMENT_UPLOADER));
     _serverInstance = new ServerInstance();
-    _serverInstance.init(serverInstanceConfig, propertyStore);
+    if (_serverConf.containsKey(SegmentCompletionProtocol.CONFIG_OF_SSL_ENABLE) &&
+        _serverConf.getBoolean(SegmentCompletionProtocol.CONFIG_OF_SSL_ENABLE)) {
+      _serverInstance.init(serverInstanceConfig, propertyStore, new NettySSLConf(_serverConf));
+    } else {
+      _serverInstance.init(serverInstanceConfig, propertyStore, null);
+    }
     _serverInstance.start();
 
     // Register state model factory
