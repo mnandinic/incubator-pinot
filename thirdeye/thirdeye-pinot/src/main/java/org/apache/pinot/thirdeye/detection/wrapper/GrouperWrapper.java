@@ -47,14 +47,13 @@ public class GrouperWrapper extends DetectionPipeline {
   private static final String PROP_NESTED = "nested";
   private static final String PROP_CLASS_NAME = "className";
   private static final String PROP_GROUPER = "grouper";
-  private static final String PROP_DETECTOR = "detector";
   private static final String PROP_DETECTOR_COMPONENT_NAME = "detectorComponentName";
+  private static final String PROP_ENTITY_NAME = "subEntityName";
 
   private final List<Map<String, Object>> nestedProperties;
 
   private final Grouper grouper;
   private final String grouperName;
-  private final String detectorName;
   private final String entityName;
 
   public GrouperWrapper(DataProvider provider, DetectionConfigDTO config, long startTime, long endTime)
@@ -68,9 +67,9 @@ public class GrouperWrapper extends DetectionPipeline {
     this.grouperName = DetectionUtils.getComponentKey(MapUtils.getString(config.getProperties(), PROP_GROUPER));
     Preconditions.checkArgument(this.config.getComponents().containsKey(this.grouperName));
     this.grouper = (Grouper) this.config.getComponents().get(this.grouperName);
+    Preconditions.checkArgument(this.config.getProperties().containsKey(PROP_ENTITY_NAME));
+    this.entityName = this.config.getProperties().get(PROP_ENTITY_NAME).toString();
 
-    this.entityName = MapUtils.getString(config.getProperties(), PROP_DETECTOR);
-    this.detectorName = DetectionUtils.getComponentKey(entityName);
   }
 
   /**
@@ -111,11 +110,12 @@ public class GrouperWrapper extends DetectionPipeline {
     for (MergedAnomalyResultDTO anomaly : anomalies) {
       if (anomaly.isChild()) {
         throw new RuntimeException("Child anomalies returned by grouper. It should always return parent anomalies"
-            + " with child mapping. Detection id: " + this.config.getId() + ", detector name: " + this.detectorName);
+            + " with child mapping. Detection id: " + this.config.getId() + ", grouper name: " + this.grouperName);
       }
 
       anomaly.setDetectionConfigId(this.config.getId());
-      anomaly.getProperties().put(PROP_DETECTOR_COMPONENT_NAME, this.detectorName);
+      anomaly.getProperties().put(PROP_DETECTOR_COMPONENT_NAME, this.grouperName);
+      anomaly.getProperties().put(PROP_ENTITY_NAME, this.entityName);
     }
 
     return new DetectionPipelineResult(anomalies, DetectionUtils.consolidateNestedLastTimeStamps(lastTimeStamps),
